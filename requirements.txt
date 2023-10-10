@@ -1,0 +1,13 @@
+# ======Torch with cuda support.======
+--extra-index-url https://download.pytorch.org/whl/cu118
+torch
+torchvision
+torchaudio
+# ======Torch with cuda support.======
+gradio
+pydub
+ffmpeg-python
+git+https://github.com/facebookresearch/demucs#egg=demucs
+faster-whisper
+git+https://github.com/m-bain/whisperx.git
+pysubs2
