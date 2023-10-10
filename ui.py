@@ -51,7 +51,7 @@ with gr.Blocks() as demo:
             gr.Markdown("在多人会话中，将不同说话人进行分类")
             with gr.Row():
                 with gr.Column():
-                    source_audio_input = gr.Audio(label="Input 16K Audio", type="filepath")
+                    source_audio_input = gr.Audio(label="Input Audio", type="filepath")
                     config_type = gr.Dropdown(["general", "meeting", "telephonic"], value="telephonic", label="配置类型", info="预配置模版")
                 with gr.Column():
                     speaks_show = gr.Number(label="说话人数")

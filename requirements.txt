@@ -11,3 +11,4 @@ git+https://github.com/facebookresearch/demucs#egg=demucs
 faster-whisper
 git+https://github.com/m-bain/whisperx.git
 pysubs2
+tqdm
