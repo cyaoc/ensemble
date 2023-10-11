@@ -53,6 +53,7 @@ with gr.Blocks() as demo:
                 with gr.Column():
                     source_audio_input = gr.Audio(label="Input Audio", type="filepath")
                     config_type = gr.Dropdown(["general", "meeting", "telephonic"], value="telephonic", label="配置类型", info="预配置模版")
+                    sd_btn = gr.Button("分类")
                 with gr.Column():
                     speaks_show = gr.Number(label="说话人数")
                     rttm_show = gr.Textbox(label="分类结果")
