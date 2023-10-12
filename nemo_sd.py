@@ -49,4 +49,6 @@ def diarize(audio_file, config_type):
     del model
     torch.cuda.empty_cache()
 
-    return rttm
+    with open(rttm, 'r') as file:
+        text = file.read()
+    return text, rttm
