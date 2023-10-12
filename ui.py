@@ -68,4 +68,4 @@ with gr.Blocks() as demo:
         with gr.TabItem("LLM知识库", id=4):
             gr.Markdown("你可以直接和你的上传文件进行对话")
     pre_to_transcription_btn.click(send_to_other_tab, inputs=[pre_audio_output, gr.State(value=1)], outputs=[wav_audio_input,tabs])
-demo.launch(share=True)
+demo.queue().launch(share=True)

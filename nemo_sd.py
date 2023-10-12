@@ -55,7 +55,7 @@ def diarize(audio_file, config_type):
     config.diarizer.vad.parameters.offset = 0.6
     config.diarizer.vad.parameters.pad_offset = -0.05
     config.diarizer.speaker_embeddings.model_path = 'titanet_large'
-    config.diarizer.msdd_model.model_path = f'diar_msdd_{config_type}'
+    config.diarizer.msdd_model.model_path = 'diar_msdd_telephonic'
 
     config.diarizer.oracle_vad = False
     config.diarizer.clustering.parameters.oracle_num_speakers=False
