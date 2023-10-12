@@ -10,7 +10,8 @@ import shutil
 def diarize(audio_file, config_type):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     file_dir = os.path.dirname(audio_file)
-    file_name = os.path.basename(audio_file)
+    file_path_no_ext, _ = os.path.splitext(audio_file)
+    file_name = os.path.basename(file_path_no_ext)
     work_home = os.path.join(file_dir, "nemo")
     if not os.path.exists(work_home):
         os.makedirs(work_home)
@@ -52,7 +53,6 @@ def diarize(audio_file, config_type):
     torch.cuda.empty_cache()
 
     source_file = os.path.join(work_home, f"diarized/pred_rttms/{file_name}.rttm")
-    print(source_file)
     if os.path.exists(source_file):
         shutil.move(source_file, file_dir) 
         shutil.rmtree(work_home)
