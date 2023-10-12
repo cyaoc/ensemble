@@ -52,6 +52,7 @@ def diarize(audio_file, config_type):
     torch.cuda.empty_cache()
 
     source_file = os.path.join(work_home, f"diarized/pred_rttms/{file_name}.rttm")
+    print(source_file)
     if os.path.exists(source_file):
         shutil.move(source_file, file_dir) 
         shutil.rmtree(work_home)
