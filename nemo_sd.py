@@ -17,6 +17,7 @@ def list_files(startpath):
             print('{}{}'.format(subindent, f))
 
 def diarize(audio_file, config_type):
+    device = "cuda" if torch.cuda.is_available() else "cpu"
     file_dir = os.path.dirname(audio_file)
     file_name, _ = os.path.splitext(audio_file)
     rttm = f'{file_name}.rttm'
@@ -59,7 +60,7 @@ def diarize(audio_file, config_type):
 
     config.diarizer.oracle_vad = False
     config.diarizer.clustering.parameters.oracle_num_speakers=False
-    model = NeuralDiarizer(cfg=config)
+    model = NeuralDiarizer(cfg=config).to(device)
     model.diarize()
     del model
     torch.cuda.empty_cache()
