@@ -121,7 +121,7 @@ with gr.Blocks() as demo:
                     input_file = gr.File(label="私人文件", file_types=['text','.srt'])
                     llm_selector = gr.Dropdown(["Azure OpenAI"], value="Azure OpenAI", label="LLM选择")
                     api_url = gr.Textbox(label="API 接口地址")
-                    api_key = gr.Textbox(label="APIKEY")
+                    api_key = gr.Textbox(label="APIKEY", type="password")
                     api_engine = gr.Textbox(label="Engie")
                     generation_btn = gr.Button("生成知识库")
                 with gr.Column(scale=3):
@@ -135,4 +135,4 @@ with gr.Blocks() as demo:
     send_srt_to_llm_btn.click(send_to_other_tab, inputs=[cached_srt, gr.State(value=4)], outputs=[input_file,tabs])
     send_rttm_to_merge_btn.click(send_to_other_tab, inputs=[cached_rttm, gr.State(value=3)], outputs=[rttm_file_input,tabs])
     send_output_to_llm_btn.click(send_to_other_tab, inputs=[cached_output, gr.State(value=4)], outputs=[input_file,tabs])
-demo.queue(max_size=50).launch(debug=True, share=False, inline=False)
+demo.queue(max_size=50).launch(debug=True, share=True, inline=False)
