@@ -7,7 +7,7 @@ import torch
 import os
 import shutil
 
-def diarize(audio_file, config_type):
+def diarize_to_rttm(audio_file, config_type):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     file_dir = os.path.dirname(audio_file)
     file_path_no_ext, _ = os.path.splitext(audio_file)
