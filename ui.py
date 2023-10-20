@@ -76,7 +76,7 @@ with gr.Blocks() as demo:
                         pre_to_transcription_btn = gr.Button("发送到语音转录")
                         pre_to_speaker_recognition_btn = gr.Button("发送到说话人识别")
                 raw_audio_input.upload(get_dBFS, inputs=raw_audio_input, outputs=decibel)
-                preprocess_audio_btn.click(preprocess_audio, inputs=[raw_audio_input,decibel,vocals_flg], outputs=[pre_audio_output,cached_preprocess])
+                preprocess_audio_btn.click(preprocess, inputs=[raw_audio_input,decibel,vocals_flg], outputs=[pre_audio_output,cached_preprocess])
         with gr.TabItem("语音转录", id=1):
             gr.Markdown("音频文件转录成文字")
             with gr.Row():
