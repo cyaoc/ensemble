@@ -13,7 +13,7 @@ def preprocess_audio(file_path, target_dBFS=-5, vocals_flg=True):
     file_name, _ = os.path.splitext(file_path)
     tmp_file = file_path
     if vocals_flg:
-        demucs.separate.main(shlex.split(f'-n htdemucs --segment 6 --two-stems=vocals "{file_path}" -o "{temp_outputs}"'))
+        demucs.separate.main(shlex.split(f'-n htdemucs --segment=6 --two-stems=vocals "{file_path}" -o "{temp_outputs}"'))
         tmp_file = os.path.join(temp_outputs, "htdemucs", os.path.basename(file_name), "vocals.wav")
     output_file = f"{file_name}.16k.wav"
     ffmpeg.input(tmp_file).output(output_file, acodec='pcm_s16le', ar=sample_rate, ac=1).overwrite_output().run()
