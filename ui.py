@@ -3,6 +3,7 @@ from audio import preprocess_audio, get_dBFS
 from whisper import transcribe_to_srt
 from nemo_sd import diarize_to_rttm
 from merge import get_speakers, merge_speakers_sub
+from llm import engine_building, engine_loading
 
 def preprocess(file_path, target_dBFS, vocals_flg):
     output_file = preprocess_audio(file_path, target_dBFS, vocals_flg)
@@ -36,6 +37,23 @@ def save_file(text):
     with open(file, 'w') as f:
         f.write(text)
     return file, file
+
+def generate(input_file,api_base,api_key,api_version,engine,embed_model_name,embed_deployment_name,embed_model_api_version):
+    llm_engine, zip = engine_building(input_file.name,api_base,api_key,api_version,engine,embed_model_name,embed_deployment_name,embed_model_api_version)
+    return zip, gr.Button(visible=False), gr.Tabs.update(selected=1),llm_engine
+
+def load_datas(input_datas_file,api_base,api_key,api_version,engine,embed_model_name,embed_deployment_name,embed_model_api_version):
+    llm_engine = engine_loading(input_datas_file.name,api_base,api_key,api_version,engine,embed_model_name,embed_deployment_name,embed_model_api_version)
+    return llm_engine
+
+def user(message, history):
+    return "", history + [[message, None]]
+
+def bot(history,llm_engine):
+    user_message = history[-1][0]
+    response = llm_engine.query(user_message)
+    history.append([None, str(response)])
+    return history
 
 def send_to_other_tab(info, target_tab):
     return info, gr.Tabs.update(selected=target_tab)
@@ -118,17 +136,31 @@ with gr.Blocks() as demo:
             gr.Markdown("你可以直接和你的上传文件进行对话")
             with gr.Row():
                 with gr.Column(scale=1):
-                    input_file = gr.File(label="私人文件", file_types=['text','.srt'])
                     llm_selector = gr.Dropdown(["Azure OpenAI"], value="Azure OpenAI", label="LLM选择")
-                    api_url = gr.Textbox(label="API 接口地址")
-                    api_key = gr.Textbox(label="APIKEY", type="password")
-                    api_engine = gr.Textbox(label="Engie")
-                    generation_btn = gr.Button("生成知识库")
+                    api_base = gr.Textbox(label="api_base")
+                    api_key = gr.Textbox(label="api_key", type="password")
+                    api_version = gr.Textbox(label="api_version")
+                    engine = gr.Textbox(label="engine")
+                    embed_model_name = gr.Textbox(label="embed_model_name", value="text-embedding-ada-002")
+                    embed_deployment_name = gr.Textbox(label="embed_deployment_name")
+                    embed_model_api_version = gr.Textbox(label="embed_model_api_version", value="2023-05-15")
+                    with gr.Tabs() as files:
+                        with gr.TabItem("未处理文件", id=0):
+                            input_file = gr.File(label="私人文件", file_types=['text','.srt'])
+                            generation_btn = gr.Button("生成知识库")
+                        with gr.TabItem("知识库文件", id=1):
+                            input_datas_file = gr.File(label="知识库文件", file_types=['.zip'])
+                            load_btn = gr.Button("加载")
                 with gr.Column(scale=3):
+                    llm_engine = gr.State()
+                    llm_index = gr.State()
                     chatbot = gr.Chatbot()
-                    msg = gr.Textbox()
-                    clear = gr.ClearButton([msg, chatbot])
-
+                    msg = gr.Textbox(label="Input message")
+                    clear = gr.Button("Clear")
+                generation_btn.click(generate, inputs=[input_file,api_base,api_key,api_version,engine,embed_model_name,embed_deployment_name,embed_model_api_version], outputs=[input_datas_file,load_btn,files, llm_engine])
+                load_btn.click(load_datas,inputs=[input_datas_file,api_base,api_key,api_version,engine,embed_model_name,embed_deployment_name,embed_model_api_version], outputs=llm_engine)
+                msg.submit(user, [msg, chatbot], [msg, chatbot], queue=False).then(bot, [chatbot, llm_engine], chatbot)
+                clear.click(lambda: None, None, chatbot, queue=False)
     pre_to_transcription_btn.click(send_to_other_tab, inputs=[cached_preprocess, gr.State(value=1)], outputs=[wav_audio_input,tabs])
     pre_to_speaker_recognition_btn.click(send_to_other_tab, inputs=[cached_preprocess, gr.State(value=2)], outputs=[source_audio_input,tabs])
     send_srt_to_merge_btn.click(send_to_other_tab, inputs=[cached_srt, gr.State(value=3)], outputs=[subs_file_input,tabs])
