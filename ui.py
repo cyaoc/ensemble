@@ -5,6 +5,15 @@ from nemo_sd import diarize_to_rttm
 from merge import get_speakers, merge_speakers_sub
 from llm import engine_building, engine_loading
 
+def after_upload(filepath):
+    return filepath, gr.Button(visible=True)
+
+def show_dBFS(filepath):
+    return get_dBFS(filepath), after_upload(filepath)
+
+def cache_input_filepath(filepath):
+    return filepath
+
 def preprocess(file_path, target_dBFS, vocals_flg):
     output_file = preprocess_audio(file_path, target_dBFS, vocals_flg)
     return output_file, output_file
@@ -56,7 +65,7 @@ def bot(history,llm_engine):
     return history
 
 def send_to_other_tab(info, target_tab):
-    return info, gr.Tabs.update(selected=target_tab)
+    return info, gr.Tabs.update(selected=target_tab), after_upload(info)
 
 with gr.Blocks() as demo:
     gr.Markdown("# 没想好名字的AI工具")
@@ -66,50 +75,55 @@ with gr.Blocks() as demo:
             with gr.Row():
                 with gr.Column():
                     raw_audio_input = gr.Audio(label="Input Audio", type="filepath")
+                    cached_input_filepath = gr.State()
                     decibel = gr.Slider(-50, 0, step=1, label = "分贝", info="声音过轻可在此处调节")
-                    vocals_flg = gr.Checkbox(value=True, label="人声分离", info="去除背景音")
-                    preprocess_audio_btn = gr.Button("预处理")
+                    vocals_flg = gr.Checkbox(label="去除背景音", info="长音频会消耗较大内存资源,colab慎用")
+                    preprocess_audio_btn = gr.Button("预处理", visible=False)
                 with gr.Column():
-                    cached_preprocess = gr.State()
                     pre_audio_output = gr.Audio(label="Output Audio", type="filepath")
+                    cached_preprocess = gr.State()
                     with gr.Row():
                         pre_to_transcription_btn = gr.Button("发送到语音转录")
                         pre_to_speaker_recognition_btn = gr.Button("发送到说话人识别")
-                raw_audio_input.upload(get_dBFS, inputs=raw_audio_input, outputs=decibel)
-                preprocess_audio_btn.click(preprocess, inputs=[raw_audio_input,decibel,vocals_flg], outputs=[pre_audio_output,cached_preprocess])
+                raw_audio_input.upload(show_dBFS, inputs=raw_audio_input, outputs=[decibel,cached_input_filepath,preprocess_audio_btn])
+                preprocess_audio_btn.click(preprocess, inputs=[cached_input_filepath,decibel,vocals_flg], outputs=[pre_audio_output,cached_preprocess])
         with gr.TabItem("语音转录", id=1):
             gr.Markdown("音频文件转录成文字")
             with gr.Row():
                 with gr.Column():
                     wav_audio_input = gr.Audio(label="Input Audio",info="推荐使用采样速率16K的音频文件", type="filepath")
+                    cached_wav_audio_filepath = gr.State()
                     whisper_models = gr.Dropdown(["medium", "large-v2"], value="medium", label="Models", info="选择转录模型")
                     compute_type = gr.Radio(["float16", "float32"], value="float16", label="compute_type", info="单精度或双精度")
                     beam_size = gr.Slider(1, 10, step=1, value=5, label = "beam_size")
                     vad_parameters = gr.Slider(100, 10000, step=100, value=2000, label = "vad_min_silence_duration_ms")
                     initial_prompt = gr.Textbox(label="initial_prompt")
-                    is_align_flg = gr.Checkbox(label="对齐", info="wav2vec2模型")
-                    transcribe_btn = gr.Button("转录")
+                    is_align_flg = gr.Checkbox(label="对齐", info="使用wav2vec2模型，但会花费更多的时间")
+                    transcribe_btn = gr.Button("转录",visible=False)
                 with gr.Column():
-                    cached_srt = gr.State()
                     subs_preview = gr.Textbox(label="字幕预览", show_copy_button=True)
+                    cached_srt = gr.State()
                     subs_file = gr.File(label="字幕文件",file_types=['.str','.ass'])
                     with gr.Row():
                         send_srt_to_merge_btn = gr.Button("发送到合并信息")
                         send_srt_to_llm_btn = gr.Button("发送到LLM知识库")
-                transcribe_btn.click(transcribe, inputs=[wav_audio_input,whisper_models,compute_type, beam_size,vad_parameters,initial_prompt,is_align_flg], outputs=[subs_preview, subs_file, cached_srt])
+                wav_audio_input.upload(after_upload,inputs=wav_audio_input,outputs=[cached_wav_audio_filepath,transcribe_btn])
+                transcribe_btn.click(transcribe, inputs=[cached_wav_audio_filepath,whisper_models,compute_type, beam_size,vad_parameters,initial_prompt,is_align_flg], outputs=[subs_preview, subs_file, cached_srt])
         with gr.TabItem("说话人分类", id=2):
             gr.Markdown("在多人会话中，将不同说话人进行分类")
             with gr.Row():
                 with gr.Column():
                     source_audio_input = gr.Audio(label="Input Audio", type="filepath")
+                    cached_source_audio_filepath = gr.State()
                     config_type = gr.Dropdown(["general", "meeting", "telephonic"], value="telephonic", label="配置类型", info="预配置模版")
-                    diarize_btn = gr.Button("分类")
+                    diarize_btn = gr.Button("分类", visible=False)
                 with gr.Column():
-                    cached_rttm = gr.State()
                     rttm_preview = gr.Textbox(label="说话人分类预览", show_copy_button=True)
+                    cached_rttm = gr.State()
                     rttm_file = gr.File(label="rttm文件", file_types=['.rrtm'])
                     send_rttm_to_merge_btn = gr.Button("发送到合并信息")
-            diarize_btn.click(diarize, inputs=[source_audio_input,config_type], outputs=[rttm_preview,rttm_file,cached_rttm])        
+            source_audio_input.upload(after_upload,inputs=source_audio_input,outputs=[cached_source_audio_filepath,diarize_btn])        
+            diarize_btn.click(diarize, inputs=[cached_source_audio_filepath,config_type], outputs=[rttm_preview,rttm_file,cached_rttm])        
         with gr.TabItem("合并信息", id=3):
             gr.Markdown("将说话人和字幕文件进行匹配")
             with gr.Row():
@@ -161,8 +175,8 @@ with gr.Blocks() as demo:
                 load_btn.click(load_datas,inputs=[input_datas_file,api_base,api_key,api_version,engine,embed_model_name,embed_deployment_name,embed_model_api_version], outputs=llm_engine)
                 msg.submit(user, [msg, chatbot], [msg, chatbot], queue=False).then(bot, [chatbot, llm_engine], chatbot)
                 clear.click(lambda: None, None, chatbot, queue=False)
-    pre_to_transcription_btn.click(send_to_other_tab, inputs=[cached_preprocess, gr.State(value=1)], outputs=[wav_audio_input,tabs])
-    pre_to_speaker_recognition_btn.click(send_to_other_tab, inputs=[cached_preprocess, gr.State(value=2)], outputs=[source_audio_input,tabs])
+    pre_to_transcription_btn.click(send_to_other_tab, inputs=[cached_preprocess, gr.State(value=1)], outputs=[wav_audio_input,tabs,cached_wav_audio_filepath,transcribe_btn])
+    pre_to_speaker_recognition_btn.click(send_to_other_tab, inputs=[cached_preprocess, gr.State(value=2)], outputs=[source_audio_input,tabs,cached_source_audio_filepath,diarize_btn])
     send_srt_to_merge_btn.click(send_to_other_tab, inputs=[cached_srt, gr.State(value=3)], outputs=[subs_file_input,tabs])
     send_srt_to_llm_btn.click(send_to_other_tab, inputs=[cached_srt, gr.State(value=4)], outputs=[input_file,tabs])
     send_rttm_to_merge_btn.click(send_to_other_tab, inputs=[cached_rttm, gr.State(value=3)], outputs=[rttm_file_input,tabs])

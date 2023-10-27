@@ -18,7 +18,7 @@ def engine_building(input_file,api_base,api_key,api_version,engine,embed_model_n
         api_version=api_version,
     )
     embed_model = OpenAIEmbedding(
-        model_name=embed_model_name,
+        model=embed_model_name,
         deployment_name=embed_deployment_name,
         api_key=api_key,
         api_base=api_base,
